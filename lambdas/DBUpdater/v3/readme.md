@@ -1,1 +1,0 @@
-bottom playercount > 0
