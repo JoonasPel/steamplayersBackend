@@ -5,13 +5,12 @@ const redis = require("redis");
 // return client or undefined if error
 const setupAndTestConn = async () => {
     const client = redis.createClient({
+        // using reader endpoint to increase performance
         url: "redis://XXXX.eun1.cache.amazonaws.com:6379",
     });
     try {
         await client.connect();
-        if (await client.ping() == "PONG") {
-            return client;
-        }
+        return client;
     } catch (error) {
         console.log("Error connecting to redis:", error);
     }
