@@ -1,0 +1,1 @@
+currentplayers(sorted set) + trendingDaily + affData + currentplayers(key-value)
