@@ -1,1 +1,0 @@
-from rds get currentplayers(+names from a_priority_table) and save to elastiCache
