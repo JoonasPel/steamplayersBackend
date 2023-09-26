@@ -55,7 +55,11 @@ exports.handler = async (event, context) => {
     let update_peak_query = "UPDATE currentplayers SET peak = CASE gameid";
     let update_bottom_query = "UPDATE currentplayers SET bottom = CASE gameid";
     for (let id of ids) {
-      const res = await client.query("SELECT MAX(playercount), MIN(playercount) FROM gameid_"+id+" WHERE timestamp>"+unix24hAgo);
+      const res = await client.query(`
+        SELECT MAX(playercount), MIN(playercount)
+        FROM gameid_${id}
+        WHERE timestamp>${unix24hAgo} AND playercount>0`);
+        
       update_peak_query += " WHEN "+id+" THEN "+res?.rows[0]?.max;
       update_bottom_query += " WHEN "+id+" THEN "+res?.rows[0]?.min;
     }
