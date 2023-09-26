@@ -57,6 +57,10 @@ const getTrendingDataFromRedis = async (trendingTime, redisClient) => {
   return await redisClient.get('trendingDaily');
 };
 
+const getAffDataFromRedis = async (redisClient) => {
+  return await redisClient.get('affData');
+};
+
 exports.handler = async (event, context) => {
   const HOWMANYGAMESPERPAGE = 10;
   
@@ -79,11 +83,12 @@ exports.handler = async (event, context) => {
       data = await getPageDataFromRedis(HOWMANYGAMESPERPAGE, pageNum, redisClient);
     } else {
       data = await getTrendingDataFromRedis(trendingTime, redisClient);
+      var affData = await getAffDataFromRedis(redisClient);
     }
     await redisClient.quit();            
     return {
       statusCode: 200,
-      body: JSON.stringify({data}),
+      body: JSON.stringify({data, aff: affData}),
       headers: { 'Access-Control-Allow-Origin': origin, },
     };
     
