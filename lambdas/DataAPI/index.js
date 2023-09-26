@@ -30,7 +30,14 @@ const handlePageNumber = (event) => {
 
 // returns origin that client is using if allowed. null otherwise
 const handleOrigin = (event) => {
-  const allowedOrigins = ['http://localhost:3000', 'https://main.d2yddnto6p0zxx.amplifyapp.com'];
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://main.d2yddnto6p0zxx.amplifyapp.com',
+    'https://www.steamplayers.info',
+    'http://www.steamplayers.info',
+    'https://steamplayers.info',
+    'http://steamplayers.info'
+    ];
   const clientOrigin = event.headers.origin;
   let origin = null;
   if (allowedOrigins.includes(clientOrigin)) {
