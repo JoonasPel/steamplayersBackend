@@ -28,9 +28,21 @@ const handlePageNumber = (event) => {
   return pageNum;
 };
 
+// returns origin that client is using if allowed. null otherwise
+const handleOrigin = (event) => {
+  const allowedOrigins = ['http://localhost:3000', 'https://main.d2yddnto6p0zxx.amplifyapp.com'];
+  const clientOrigin = event.headers.origin;
+  let origin = null;
+  if (allowedOrigins.includes(clientOrigin)) {
+    origin = clientOrigin;
+  }
+  return origin;
+};
+
 exports.handler = async (event, context) => {
   const HOWMANYGAMESPERPAGE = 10;
   
+  const origin = handleOrigin(event);
   const pageNum = handlePageNumber(event);
   
   const redisClient = await setupAndTestConn();
@@ -38,7 +50,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Hello. this is error !" }),
-      headers: { 'Access-Control-Allow-Origin': '*', },
+      headers: { 'Access-Control-Allow-Origin': origin, },
     };
   }
   
@@ -49,16 +61,15 @@ exports.handler = async (event, context) => {
     await redisClient.quit();            
     return {
       statusCode: 200,
-      body: { data: res},
-      headers: { 'Access-Control-Allow-Origin': "*", },
-      //headers: { 'Access-Control-Allow-Origin': "https://www.steamplayers.info", },
+      body: JSON.stringify({data: res}),
+      headers: { 'Access-Control-Allow-Origin': origin, },
     };
   } catch {
     await redisClient.quit();
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Hello. this is an error !" }),
-      headers: { 'Access-Control-Allow-Origin': '*', },
+      headers: { 'Access-Control-Allow-Origin': origin, },
     };
   }
 };
