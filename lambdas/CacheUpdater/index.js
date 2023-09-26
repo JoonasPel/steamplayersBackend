@@ -77,6 +77,18 @@ const getDailyTrendingRDS = async (rdsClient) => {
     return items;
 };
 
+const getAffDataRDS = async (rdsClient) => {
+  const response = await rdsClient.query(`
+    SELECT ad.gameid, ad.url, ad.price, ad.retailprice
+    FROM affdata as ad
+    LEFT JOIN a_trending_daily as td ON ad.gameid = td.gameid
+    ORDER BY td.increase DESC
+    LIMIT 10;
+  `);
+  const rows = response.rows;
+  return rows;
+};
+
 // delete old players and save new
 // TODO ERROR HANDLING
 const saveToRedis = async (redisClient, items) => {
@@ -106,6 +118,11 @@ exports.handler = async (event) => {
     // get TOP 10 daily trending from rds and save to redis
     const daily = await getDailyTrendingRDS(rdsClient);
     await redisClient.set('trendingDaily', JSON.stringify(daily));
+    
+    // get aff data for trending games from rds and save to redis.
+    const affData = await getAffDataRDS(rdsClient);
+    await redisClient.set('affData', JSON.stringify(affData));
+    
     
     await closeConnections(redisClient, rdsClient);
     return {statusCode: 200};
