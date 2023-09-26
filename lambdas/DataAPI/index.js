@@ -1,8 +1,24 @@
-const AWS = require('aws-sdk');
-const { Client } = require('pg');
+const redis = require("redis");
 
 
-exports.handler = async (event, context) => {
+// connect to redis and test connection.
+// return client or undefined if error
+const setupAndTestConn = async () => {
+    const client = redis.createClient({
+        url: "redis://XXXX.eun1.cache.amazonaws.com:6379",
+    });
+    try {
+        await client.connect();
+        if (await client.ping() == "PONG") {
+            return client;
+        }
+    } catch (error) {
+        console.log("Error connecting to redis:", error);
+    }
+    return undefined;
+};
+
+const handlePageNumber = (event) => {
   let pageNum = 1;
   if (event?.queryStringParameters) {
     pageNum = event.queryStringParameters?.page;
@@ -10,19 +26,16 @@ exports.handler = async (event, context) => {
       pageNum = 1;
     }
   }
+  return pageNum;
+};
+
+exports.handler = async (event, context) => {
+  const HOWMANYGAMESPERPAGE = 10;
   
-  // db setup
-  const client = new Client({
-    host: "XXXX.eu-north-1.rds.amazonaws.com",
-    port: 'XXXX',
-    database: "XXXX",
-    user: "XXXX",
-    password: "XXXX",
-  });
-  try {
-    await client.connect();
-  } catch {
-    console.error('Error connecting to RDS');
+  const pageNum = handlePageNumber(event);
+  
+  const redisClient = await setupAndTestConn();
+  if (!redisClient) {
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Hello. this is error !" }),
@@ -31,17 +44,18 @@ exports.handler = async (event, context) => {
   }
   
   try {
-    const res = await client.query(`SELECT * FROM f_page_${pageNum} LIMIT 30`);
-    await client.end();
+    const firstIndex = (pageNum-1)*HOWMANYGAMESPERPAGE;
+    const lastIndex = firstIndex + HOWMANYGAMESPERPAGE -1;
+    const res = await redisClient.ZRANGE("players", firstIndex, lastIndex, {"REV": true });
+    await redisClient.quit();            
     return {
       statusCode: 200,
-      body: JSON.stringify({ data: res.rows}),
+      body: { data: res},
       headers: { 'Access-Control-Allow-Origin': "*", },
       //headers: { 'Access-Control-Allow-Origin': "https://www.steamplayers.info", },
     };
   } catch {
-    await client.end();
-    console.error('Error something');
+    await redisClient.quit();
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Hello. this is an error !" }),
