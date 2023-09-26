@@ -54,10 +54,14 @@ const getStatisticsFromRDS = async (rdsClient) => {
     `);
     const rows = response.rows;
     const items = [];
+    const items2 = [];
     for (let row of rows) {
-        items.push({score: Number(row.playercount), value: JSON.stringify(row)});
+      const stringifiedRow = JSON.stringify(row);
+      items.push({score: Number(row.playercount), value: stringifiedRow});
+      items2.push(row.gamename);
+      items2.push(stringifiedRow);
     }
-    return items;
+    return [items, items2];
 };
 
 const getDailyTrendingRDS = async (rdsClient) => {
@@ -112,8 +116,11 @@ exports.handler = async (event) => {
     if (!redisClient) { throw new Error('redis connection error') }
     if (!rdsClient) { throw new Error('rds connection error') }
     
-    const items = await getStatisticsFromRDS(rdsClient);
+    const [items, items2] = await getStatisticsFromRDS(rdsClient);
     await saveToRedis(redisClient, items);
+    // saves every game also as key(gamename)-value(data) for search feature
+    await redisClient.MSET(items2);
+    
     
     // get TOP 10 daily trending from rds and save to redis
     const daily = await getDailyTrendingRDS(rdsClient);
