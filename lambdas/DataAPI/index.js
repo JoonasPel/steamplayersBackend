@@ -39,37 +39,56 @@ const handleOrigin = (event) => {
   return origin;
 };
 
+const errorResponse = (errorMsg, origin) => {
+  return {
+    statusCode: 500,
+    body: JSON.stringify({message: errorMsg}),
+    headers: { 'Access-Control-Allow-Origin': '*', },
+  };
+};
+
+const getPageDataFromRedis = async (HOWMANYGAMESPERPAGE, pageNum, redisClient) => {
+  const firstIndex = (pageNum-1)*HOWMANYGAMESPERPAGE;
+  const lastIndex = firstIndex + HOWMANYGAMESPERPAGE -1;
+  return await redisClient.ZRANGE("players", firstIndex, lastIndex, {"REV": true });
+};
+
+const getTrendingDataFromRedis = async (trendingTime, redisClient) => {
+  return await redisClient.get('trendingDaily');
+};
+
 exports.handler = async (event, context) => {
   const HOWMANYGAMESPERPAGE = 10;
   
   const origin = handleOrigin(event);
-  const pageNum = handlePageNumber(event);
   
-  const redisClient = await setupAndTestConn();
-  if (!redisClient) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Hello. this is error !" }),
-      headers: { 'Access-Control-Allow-Origin': origin, },
-    };
+  // check if page or trendings requested
+  let pageNum, trendingTime;
+  if (event?.queryStringParameters?.page) {
+    pageNum = handlePageNumber(event);
+  } else if (event?.queryStringParameters?.trending) {
+    trendingTime = 1; // 1 = daily for now. only daily for now.
   }
+
+  const redisClient = await setupAndTestConn();
+  if (!redisClient) { return errorResponse("error something", origin); }
   
   try {
-    const firstIndex = (pageNum-1)*HOWMANYGAMESPERPAGE;
-    const lastIndex = firstIndex + HOWMANYGAMESPERPAGE -1;
-    const res = await redisClient.ZRANGE("players", firstIndex, lastIndex, {"REV": true });
+    let data;
+    if (pageNum) {
+      data = await getPageDataFromRedis(HOWMANYGAMESPERPAGE, pageNum, redisClient);
+    } else {
+      data = await getTrendingDataFromRedis(trendingTime, redisClient);
+    }
     await redisClient.quit();            
     return {
       statusCode: 200,
-      body: JSON.stringify({data: res}),
+      body: JSON.stringify({data}),
       headers: { 'Access-Control-Allow-Origin': origin, },
     };
-  } catch {
+    
+  } catch (error) {
     await redisClient.quit();
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: "Hello. this is an error !" }),
-      headers: { 'Access-Control-Allow-Origin': origin, },
-    };
+    return errorResponse("error something", origin);
   }
 };
