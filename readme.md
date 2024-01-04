@@ -51,6 +51,10 @@ Key Features:
       which is "converted" into game IDs with Opensearch.
       For example: search query "apex" -> opensearch finds "Apex Legends"
       -> get player data of Apex Legends from redis -> return to the client.
+      Caching of the data is also used in the frontend. Every response data
+      is stored locally for 100 seconds, and if requested again during this,
+      cache is used instead. So for example going forward and backward in
+      the player count table will not request the data again all the time.
     
     Affiliate links:
       I made a program that searches the game from a game seller website and
