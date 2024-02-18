@@ -1,0 +1,1 @@
+This Lambda is invoked by the Step Function. It reads appids from the database, splits them to chunks and then sends those chunks as separate messages to the SQS. Another Lambda can then concurrently consume these messages/chunks.
