@@ -1,0 +1,1 @@
+This Lambda is invoked by the Step Function. It calculates and saves the player count increase/decrease of every game by comparing the last 12 hours vs last 24-36 hours. i.e. from 13.30 to 01.30 today vs same timeframe yesterday. 
