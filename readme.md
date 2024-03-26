@@ -8,7 +8,7 @@ This application leverages the Steam API to collect real-time player data for St
 
 ### Database:
 
-Periodically collected data is stored in RDS(using PostgreSQL). The database includes game IDs+Names, playercount history with timestamps, current players, 24-hour peak and bottom playercounts and trending games with their player increase percentage.
+Periodically collected data is stored in RDS(PostgreSQL as engine). The database includes game IDs+Names, playercount history with timestamps, current players, 24-hour peak and bottom playercounts and trending games with their player increase percentage.
 
 ### Cache:
 
@@ -34,7 +34,7 @@ Frontend is hosted in AWS Amplify. When a code change is pushed into GitHub "mai
 As shown in the architecture, there is a clear split between the backend, where the cost of "core" backend is always the same and independent of the users traffic. The "user-facing" backend cost scales by the user traffic and it could be very easily scaled to withstand a large amount of users by increasing the concurrency of Lambdas and if needed, the elasticache could have a primary node that is only used by the update process of core backend and the data fetching triggered by users would be executed on replica nodes with reader endpoint.
 
 ### Core-backend scalability solutions
-The Steam API allows only one game per request, meaning that a big amount of requests needs to be sent. This scalability is implemented by using a single Lambda to read all game IDs from the database and then diving them into chunks. These chunks are then pushed into SQS as individual items that consumer Lambdas can take and process concurrently. (one chunk of IDs per Lambda). 
+The Steam API allows only one game per request, meaning that a big amount of requests needs to be sent. This scalability is implemented by using a single Lambda to read all game IDs from the database and then dividing them into chunks. These chunks are then pushed into SQS as individual items that consumer Lambdas can take and process concurrently. (one chunk of IDs per Lambda). 
 
 ### Future Enhancements:
   The backend currently does not check the Steam API for new game releases but the system is made so that it should be pretty straightforward to implement. The needed steps would be adding a new lambda function that fetches the game IDs and names from Steam API and updates the database with them and also adds the new game names to Opensearch so search queries can find them.
